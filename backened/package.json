@@ -1,10 +1,11 @@
 {
   "name": "backened",
+  "type" : "module",
   "version": "1.0.0",
   "description": "it is a backened made with porffessional code",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+      "dev" : "nodemon src/index.js"
   },
   "keywords": [
     "express",
@@ -12,5 +13,8 @@
     "dotenv"
   ],
   "author": "Mohd_Arham",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
 }
