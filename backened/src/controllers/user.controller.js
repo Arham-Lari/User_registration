@@ -8,3 +8,5 @@ const registeruser = AsyncHandler(async (req,res)=>{
     })
 })
 
+export {registeruser};
+
