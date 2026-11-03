@@ -4,6 +4,28 @@ import {AsyncHandler} from "../utils/AsyncHandler.js"
 import {user} from "../models/user.model.js"
 import upload from "../utils/fileUpload.js"
 
+const generateAcessTokenAndRefreshToken = async (userId) =>{
+    try{
+
+        const User = await user.findById(userId);
+
+        const acessToken = User.generateAccessToken();
+        const refreshtoken = User.generateRefreshToken();
+
+        //adding the value of refresh token to our user
+        User.refresh_token = refreshtoken;
+        //if we not do validate before save false then all other field will become empty
+        User.save({validateBeforeSave : false});
+
+
+    
+    }catch(error){
+
+        throw new ApiError(500,"something went wrong")
+
+    }
+}
+
 
 const registeruser = AsyncHandler(async (req,res)=>{
 
@@ -20,8 +42,8 @@ const registeruser = AsyncHandler(async (req,res)=>{
     }
 
     //checking if user already exits
-    const existingUserName = user.findOne({username});
-    const existingEmail = user.findOne({email});
+    const existingUserName = await user.findOne({username});
+    const existingEmail = await user.findOne({email});
 
     if(existingEmail) {
         throw new ApiError(409,"email already exist");
@@ -31,9 +53,8 @@ const registeruser = AsyncHandler(async (req,res)=>{
         throw new ApiError(409,"username already exists");
     }
 
-    //acess the images using addition function such as files() given by multer
+    //acess the images using addition function such as field() given by multer
     const localpath = req?.field.avatar[0]?.path;
-    console.log(localpath);
 
     if(!localpath){
         throw new ApiError(400,"Avatar file is required");
@@ -59,10 +80,12 @@ const registeruser = AsyncHandler(async (req,res)=>{
         "-password -refreshtoken"
     );
 
+    //checking if the user created succesfully
     if(!createUser){
         throw new ApiError(500,"something went wrong in user creation in data base");
     }
 
+    //returning the response
     return res.status(201).json(
         new ApiResponse(200,createUser,"user registered succesfully")
     )
@@ -70,5 +93,35 @@ const registeruser = AsyncHandler(async (req,res)=>{
 
 })
 
-export {registeruser};
+
+const loginUser = AsyncHandler(async () =>{
+
+    //taking the username and password form the user
+    const {username,password} = req.body;
+
+    //checking if the user have field all the field or not
+    if([username,password].some(field => 
+        field?.trim() === ""
+    )){
+        throw new ApiError(400,"username and password both are requird");
+    }
+
+    //finding the user with the same username in data base
+    const usernameExits = await user.findOne({username});
+
+    if(!usernameExits){
+        throw new ApiError(404,"user not found");
+    }
+
+
+    //checking the password
+    const passwordValid = await usernameExits.isPasswordCorrect(password);
+
+    if(!passwordValid) throw new ApiError (401,"password is wrong");
+
+
+
+})
+
+export {registeruser, loginUser};
 
