@@ -4,6 +4,7 @@ import {AsyncHandler} from "../utils/AsyncHandler.js"
 import {user} from "../models/user.model.js"
 import upload from "../utils/fileUpload.js"
 
+//funtion to generate the acess token and refresh token by getting the id 
 const generateAcessTokenAndRefreshToken = async (userId) =>{
     try{
 
@@ -16,6 +17,8 @@ const generateAcessTokenAndRefreshToken = async (userId) =>{
         User.refresh_token = refreshtoken;
         //if we not do validate before save false then all other field will become empty
         User.save({validateBeforeSave : false});
+
+        return {acessToken,refreshtoken}
 
 
     
@@ -119,7 +122,35 @@ const loginUser = AsyncHandler(async () =>{
 
     if(!passwordValid) throw new ApiError (401,"password is wrong");
 
+    //taking the genrated acess token and refresh token
+    const {acess,refresh} = await generateAcessTokenAndRefreshToken(usernameExits._id);
 
+    //send access token and refresh token through cookie
+
+    usernameExits.refresh_token = refresh;
+    usernameExits.save();
+
+    const loggedInUser = await user.findById(usernameExits._id).select("-password -refresh_token");
+
+    //genrating cookie options
+    const options = {
+        //it enables the cookie to be only modifiabel at the backend
+        httpOnly : true,
+        secure : true,
+    }
+
+    return res.status(200)
+        .cookie("acccesToken", acess, options)
+        .cookie("refresh_token",refresh ,options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    usernameExits : loggedInUser ,acess,refresh
+                },
+                "user log in success fully"
+            )
+        )
 
 })
 
