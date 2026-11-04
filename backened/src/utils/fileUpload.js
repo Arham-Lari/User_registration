@@ -10,14 +10,16 @@ fileUpload.config({
 
 });
 
+
 const uploadFileInCloudnary = async (localPath) =>{
     try{
 
         if(!localPath) return null;
 
         const response = await fileUpload.uploader.upload(localPath,{
-            resource_type: auto,
+            resource_type: "auto",
         });
+
 
         console.log("file is uploaded in cloudnary",response.url);
 
@@ -26,6 +28,8 @@ const uploadFileInCloudnary = async (localPath) =>{
         return response;
 
     }catch(error){
+
+        console.log("\nthe cloudnary error = ",error)
              
         fs.unlinkSync(localPath);//remove file from the local path in case of error
 

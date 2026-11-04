@@ -4,28 +4,20 @@ import {AsyncHandler} from "../utils/AsyncHandler.js"
 import {user} from "../models/user.model.js"
 import upload from "../utils/fileUpload.js"
 
-//funtion to generate the acess token and refresh token by getting the id 
-const generateAcessTokenAndRefreshToken = async (userId) =>{
-    try{
+const AcessAndRefreshTokenGenrator = async (userid) =>{
 
-        const User = await user.findById(userId);
+    try {
+        const User = user.findById(userid);
 
-        const acessToken = User.generateAccessToken();
-        const refreshtoken = User.generateRefreshToken();
+        const accessToken = User.generateAccessToken();
+        const refreshToken = User.generateRefreshToken();
 
-        //adding the value of refresh token to our user
-        User.refresh_token = refreshtoken;
-        //if we not do validate before save false then all other field will become empty
+        User.refresh_token = refreshToken;
         User.save({validateBeforeSave : false});
 
-        return {acessToken,refreshtoken}
-
-
-    
+        return {accessToken,refreshToken};
     }catch(error){
-
-        throw new ApiError(500,"something went wrong")
-
+        throw new ApiError(500,"something went wrong");
     }
 }
 
@@ -56,8 +48,8 @@ const registeruser = AsyncHandler(async (req,res)=>{
         throw new ApiError(409,"username already exists");
     }
 
-    //acess the images using addition function such as field() given by multer
-    const localpath = req?.field.avatar[0]?.path;
+    //acess the images using addition function such as files() given by multer
+    const localpath = req?.files.avatar[0].path;
 
     if(!localpath){
         throw new ApiError(400,"Avatar file is required");
@@ -83,12 +75,10 @@ const registeruser = AsyncHandler(async (req,res)=>{
         "-password -refreshtoken"
     );
 
-    //checking if the user created succesfully
     if(!createUser){
         throw new ApiError(500,"something went wrong in user creation in data base");
     }
 
-    //returning the response
     return res.status(201).json(
         new ApiResponse(200,createUser,"user registered succesfully")
     )
@@ -96,89 +86,66 @@ const registeruser = AsyncHandler(async (req,res)=>{
 
 })
 
-
-const loginUser = AsyncHandler(async (req,res) =>{
-
-    //taking the username and password form the user
+const loginUser = AsyncHandler(async(req,res)=>{
+    
     const {username,password} = req.body;
 
-    //checking if the user have field all the field or not
-    if([username,password].some(field => 
-        field?.trim() === ""
-    )){
-        throw new ApiError(400,"username and password both are requird");
+    if([username,password].some(field => field?.trim === "")){
+        throw new ApiError(400,"username and password both are required")
     }
 
-    //finding the user with the same username in data base
-    const usernameExits = await user.findOne({username});
+    const User = user.findOne(username);
 
-    if(!usernameExits){
-        throw new ApiError(404,"user not found");
-    }
+    if(!User) throw new ApiError(404,"Usern not found");
 
+    const vlidatePassword = await User.isPasswordCorrect(password); 
 
-    //checking the password
-    const passwordValid = await usernameExits.isPasswordCorrect(password);
+    if(!vlidatePassword) throw new ApiError(401,"password is wrong");
 
-    if(!passwordValid) throw new ApiError (401,"password is wrong");
+    const{access,refresh} = AcessAndRefreshTokenGenrator(User._id);
 
-    //taking the genrated acess token and refresh token
-    const {acess,refresh} = await generateAcessTokenAndRefreshToken(usernameExits._id);
+    User.refresh_token = refresh;
+    User.save();
 
-    //send access token and refresh token through cookie
+    const loggedInUser = user.findById(User._id).select("-password -refresh_token");
 
-    usernameExits.refresh_token = refresh;
-    usernameExits.save();
-
-    const loggedInUser = await user.findById(usernameExits._id).select("-password -refresh_token");
-
-    //genrating cookie options
     const options = {
-        //it enables the cookie to be only modifiabel at the backend
         httpOnly : true,
         secure : true,
-    }
+    };
 
     return res.status(200)
-        .cookie("acccesToken", acess, options)
-        .cookie("refresh_token",refresh ,options)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    usernameExits : loggedInUser ,acess,refresh
-                },
-                "user log in success fully"
-            )
-        )
+              .cookie("accesToken",access,options)
+              .cookie("refresh_token",refresh,options)
+              .json(new ApiResponse(200,{loggedInUser,access,refresh},"user login successfully"));
 
 })
 
-const logOut = AsyncHandler(async (req,res)=>{
+const logOut = AsyncHandler(async(req,res)=>{
 
-    await user.findByIdAndUpdate(
-        req.User._id,
+    user.findOneAndUpdate(
+        req?.User._id,
         {
             $set: {
-                refresh_token : undefined,
+                refresh_token : undefined
             }
         },
         {
             new : true,
-        }  
+        }
     )
 
     const options = {
         httpOnly : true,
         secure : true,
-    } 
+    };
 
-    return res
-    .status(200)
-    .clearCookie("accessToken",options)
-    .clearCookie("refresh_token",options)
-    .json(new ApiResponse(200,{},"user logged out"))
+    return res.status(200)
+              .clearCookie("accessToken",options)
+              .clearCookie("refresh_token",options)
+              .json(new ApiResponse(200,{},"user logged out"));
+
 })
 
-export {registeruser, loginUser,logOut};
+export {registeruser,loginUser,logOut};
 

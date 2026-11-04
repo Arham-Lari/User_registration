@@ -4,7 +4,7 @@ const storage = multer.diskStorage({
     destination : function(_,file,cb){
         cb(null,"./public/temp");
 
-        console.log(file);
+        console.log("the file is uploaded by the multer",file);
     },
 
     filename: function(_,file,cb){
