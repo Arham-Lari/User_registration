@@ -1,16 +1,16 @@
 import { useState } from "react"
 import { registration } from "../Api/ragistration.js";
 
-const loginPage = () => {
+const LoginPage = () => {
 
     const [userData,setUserData] = useState({
-        username,
-        password,
-        fullname,
-        email,
+        username : "",
+        password : "",
+        fullname : "",
+        email : "",
     });
 
-    const OnSumbmit = async(e) =>{
+    const onSumbmit = async(e) =>{
       e.preventDefault();
 
       const response = await registration({
@@ -21,9 +21,19 @@ const loginPage = () => {
       })  
 
         console.log(response)
+
+        setUserData(prev=>(
+            {
+                ...prev,
+                username: "",
+                email : "",
+                password : "",
+                fullname: "",
+            }
+        ))
     }
 
-    const HandleChange = (e)=>{
+    const handleChange = (e)=>{
 
         setUserData((prev)=>({
             ...prev,
@@ -35,14 +45,14 @@ const loginPage = () => {
         <div>
             
         <h1>Registration</h1>
-          <form OnSumbmit={OnSumbmit}>
+          <form onSubmit={onSumbmit}>
 
                 <input
                     type="text"
                     name="username"
                     placeholder="Enter username"
                     value={userData.username}
-                    onChange={HandleChange}
+                    onChange={handleChange}
                     required
                 />
 
@@ -53,7 +63,7 @@ const loginPage = () => {
                     name="fullname"
                     placeholder="Enter full name"
                     value={userData.fullname}
-                    onChange={HandleChange}
+                    onChange={handleChange}
                     required
                 />
 
@@ -64,7 +74,7 @@ const loginPage = () => {
                     name="email"
                     placeholder="Enter email"
                     value={userData.email}
-                    onChange={HandleChange}
+                    onChange={handleChange}
                     required
                 />
 
@@ -75,7 +85,7 @@ const loginPage = () => {
                     name="password"
                     placeholder="Enter password"
                     value={userData.password}
-                    onChange={HandleChange}
+                    onChange={handleChange}
                     required
                 />
 
@@ -90,4 +100,4 @@ const loginPage = () => {
     )
 }
 
-export default loginPage
+export default LoginPage

@@ -1,9 +1,9 @@
-import loginPage from "./components/loginPage.jsx"
+import LoginPage from "./components/loginPage.jsx"
 
 function App() {
    return (
        <>
-        <loginPage/>
+        <LoginPage/>
        </>
    )
 
