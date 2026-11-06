@@ -25,7 +25,7 @@ const userSchema = new Schema({
     },
     avatar : {
         type : "string",
-        required : true,
+        required : false,
     },
     password : {
         type : String,
@@ -36,12 +36,13 @@ const userSchema = new Schema({
     }
 },{timestamps : true});
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
 
-    if(!this.isModified("password")) return next();
+    if(!this.isModified("password")) return ;
 
-    this.password =  bycrpt.hash(this.password,10);
-    next();
+    this.password =  await bycrpt.hash(this.password,10);
+
+    console.log("hash password = ",this.password)
 })
 
 userSchema.methods.isPasswordCorrect = async function (password) {

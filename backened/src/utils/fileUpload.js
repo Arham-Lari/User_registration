@@ -7,8 +7,9 @@ fileUpload.config({
   cloud_name:process.env.CLOUDNARY_NAME,
   api_key:process.env.CLOUDNARY_APIKEY,
   api_secret:process.env.CLOUDNARY_API_SECREATE
+})
 
-});
+
 
 
 const uploadFileInCloudnary = async (localPath) =>{
@@ -23,7 +24,7 @@ const uploadFileInCloudnary = async (localPath) =>{
 
         console.log("file is uploaded in cloudnary",response.url);
 
-        fs.unlink(localPath);
+        fs.unlinkSync(localPath);
 
         return response;
 

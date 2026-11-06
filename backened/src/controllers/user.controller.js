@@ -7,10 +7,11 @@ import upload from "../utils/fileUpload.js"
 const AcessAndRefreshTokenGenrator = async (userid) =>{
 
     try {
-        const User = user.findById(userid);
+        const User =await user.findById(userid);
 
         const accessToken = User.generateAccessToken();
         const refreshToken = User.generateRefreshToken();
+
 
         User.refresh_token = refreshToken;
         User.save({validateBeforeSave : false});
@@ -49,30 +50,27 @@ const registeruser = AsyncHandler(async (req,res)=>{
     }
 
     //acess the images using addition function such as files() given by multer
-    const localpath = req?.files.avatar[0].path;
+    const localpath = req.files?.avatar?.[0]?.path;
 
-    if(!localpath){
-        throw new ApiError(400,"Avatar file is required");
-    }
+
 
     //uploading in cloudnary
     const avatarUrl = await upload(localpath);
+
     
-    if(!avatarUrl){
-        throw new ApiError(400,"avatar file is not uploaded");
-    }
 
     //adding avatar url to database
     const User = await user.create({
+        username,
         fullname,
-        avatar: avatarUrl.url,
+        avatar: avatarUrl?.url,
         email,
         password,
     })
 
     //removing the field from the user object coming from database 
     const createUser = await user.findById(User._id).select(
-        "-password -refreshtoken"
+        "-password -refresh_token"
     );
 
     if(!createUser){
@@ -90,24 +88,26 @@ const loginUser = AsyncHandler(async(req,res)=>{
     
     const {username,password} = req.body;
 
-    if([username,password].some(field => field?.trim === "")){
-        throw new ApiError(400,"username and password both are required")
-    }
+    if(!username && !password) throw new ApiError(400,"username and password both are required");
 
-    const User = user.findOne(username);
+    const User = await user.findOne({username});
 
     if(!User) throw new ApiError(404,"Usern not found");
 
-    const vlidatePassword = await User.isPasswordCorrect(password); 
+
+    const vlidatePassword = await User.isPasswordCorrect (password); 
 
     if(!vlidatePassword) throw new ApiError(401,"password is wrong");
 
-    const{access,refresh} = AcessAndRefreshTokenGenrator(User._id);
+
+
+    const{access,refresh} = await AcessAndRefreshTokenGenrator(User._id);
+ 
 
     User.refresh_token = refresh;
     User.save();
 
-    const loggedInUser = user.findById(User._id).select("-password -refresh_token");
+    const loggedInUser = await user.findById(User._id).select("-password -refresh_token");
 
     const options = {
         httpOnly : true,
