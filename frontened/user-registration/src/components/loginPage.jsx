@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { registration } from "../Api/ragistration.js";
 
-const LoginPage = () => {
+const RegistrationPage = () => {
+
+    let response ;
 
     const[popup,Setpopup]=useState(false);
 
@@ -27,13 +29,16 @@ const LoginPage = () => {
 
         try {
             setLoading(true)
-            const response = await registration({
+             response = await registration({
                 username:userData.username,
                 password:userData.password,
                 fullname:userData.fullname,
                 email:userData.email
             });
-            console.log(response);
+           
+            console.log(response.data._id)
+
+
             Setpopup(true);
 
             setUserData({
@@ -44,6 +49,7 @@ const LoginPage = () => {
             });
 
         } catch (error) {
+            Setpopup(false)
             console.log(error.message);
         } finally {
             setLoading(false);
@@ -179,4 +185,4 @@ const LoginPage = () => {
 )
 }
 
-export default LoginPage;
+export default RegistrationPage;
